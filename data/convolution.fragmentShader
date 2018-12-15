@@ -1,0 +1,32 @@
+#version 330 core
+
+in vec2 UV;
+uniform sampler2D tx;
+
+out float outColor;
+
+uniform float[25] convolutionMatrix;
+uniform float convolutionLevel;
+uniform vec2[25] texelOffsets;
+
+void main() {
+    float txColor = texture(tx, UV).r;
+
+    float value = 0;
+    
+    for(int i=0; i<25; i++) {
+        int y = i / 5;
+        int x = i % 5;
+        value += texture(tx, UV + texelOffsets[i]).r * convolutionMatrix[i];
+    }    
+    float outValue = (1-convolutionLevel)*txColor + convolutionLevel*value;
+
+    if(outValue > 1) {
+        outValue = 1;
+    }
+    if(outValue < -1) {
+        outValue = -1;
+    }
+        
+    outColor = outValue;
+}

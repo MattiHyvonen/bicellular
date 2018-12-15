@@ -1,0 +1,13 @@
+#version 330 core
+
+in vec2 UV;
+uniform sampler2D tx;
+
+out float outColor;
+
+uniform mat4 colorTransform;
+
+void main() {
+    float txColor = texture(tx, UV).r;
+    outColor = txColor;
+}

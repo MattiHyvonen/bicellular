@@ -1,0 +1,13 @@
+#version 330 core
+
+in vec2 UV;
+uniform sampler2D tx;
+
+out vec3 outColor;
+
+uniform mat4 colorTransform;
+
+void main() {
+    vec3 txColor = texture(tx, UV).rgb;
+    outColor = vec3(1,1,1) - txColor;
+}
