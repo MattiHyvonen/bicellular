@@ -1,0 +1,14 @@
+#version 330 core
+
+in vec2 UV;
+uniform sampler2D tx;
+
+out float outColor;
+
+void main() {
+    float txValue = texture(tx, UV).r;
+    
+    float result = txValue;
+
+    outColor = result;
+}

@@ -9,5 +9,6 @@ uniform mat4 colorTransform;
 
 void main() {
     float txColor = texture(tx, UV).r;
-    outColor = vec3(txColor, -txColor, -txColor);
+    float outValue = (txColor + 1)/2;
+    outColor = vec3(outValue, outValue, outValue);
 }
