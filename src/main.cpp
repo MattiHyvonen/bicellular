@@ -9,7 +9,8 @@ int main() {
     do{
         clear();
         render();
-    } while(keepRunning());
+        handleEvents();
+    } while(running());
     
     return 0;
 }

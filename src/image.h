@@ -2,11 +2,7 @@
 
 #include "graphics.h"
 
-enum convolutionTypeEnum{
-    BLUR,
-    LAPLACIAN,
-    DEFAULT
-};
+
 
 
 class image{
@@ -19,7 +15,7 @@ class image{
     GLuint uvBufferID = 0;
     GLuint textureID = 0;
     GLuint frameBufferID = 0;
-    GLuint shaderID = 0;
+//GLuint shaderID = 0;
     
     //texel offsets are relative vectors to neighbouring texels
     glm::vec2 texel_offsets[25];
@@ -31,16 +27,18 @@ class image{
     bool setTexelOffsets();
     
 public:
-    //the type of convolution filter to use
-    convolutionTypeEnum convolutionType = DEFAULT;
+//the type of convolution filter to use
+//convolutionTypeEnum convolutionType = DEFAULT;
     
     //set image transformation
     void transform(float x, float y, float scale = 1);
     
-    bool create(int w, int h, GLuint shader);
+//bool create(int w, int h, GLuint shader);
+    bool create(int w, int h);
     bool setFromPixels(GLfloat* pixels);
     bool setAsTestPattern();
-    bool render(GLfloat convolutionLevel = 1, GLfloat dryLevel = 0);
+//bool render(GLfloat convolutionLevel = 1, GLfloat dryLevel = 0);
+    bool render();
     bool setAsRenderTarget();
     
 };

@@ -22,36 +22,15 @@ static const GLfloat rectangleUVs[] = {
 };
 
 
-const float v = 1.0/256.0;
-static const float convolution_laplacian[] = {
-    -1.0*v,  -4.0*v,  -6.0*v,  -4.0*v,  -1.0*v,
-    -4.0*v, -16.0*v, -24.0*v, -16.0*v,  -4.0*v,
-    -6.0*v, -24.0*v, 476.0*v, -24.0*v,  -6.0*v,
-    -4.0*v, -16.0*v, -24.0*v, -16.0*v,  -4.0*v,
-    -1.0*v,  -4.0*v,  -6.0*v,  -4.0*v,  -1.0*v
-};
-
-
-static const float convolution_blur[] = {
-     1.0*v,   4.0*v,   6.0*v,   4.0*v,   1.0*v,
-     4.0*v,  16.0*v,  24.0*v,  16.0*v,   4.0*v,
-     6.0*v,  24.0*v,  36.0*v,  24.0*v,   6.0*v,
-     4.0*v,  16.0*v,  24.0*v,  16.0*v,   4.0*v,
-     1.0*v,   4.0*v,   6.0*v,   4.0*v,   1.0*v
-};
-
-static const float convolution_default[] = {
-     0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,
-     0,  0,  1,  0,  0,
-     0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0
-};
-
+GLuint getCurrentShader() {
+    GLint result;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &result);
+    return result;
+}
 
 
 bool image::setFromPixels(GLfloat* pixels) {
-    glUseProgram(shaderID);
+//glUseProgram(shaderID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(
         GL_TEXTURE_2D,      //target
@@ -93,26 +72,10 @@ void image::transform(float x, float y, float scale) {
 }
 
 
-bool image::create(int w, int h, GLuint shader) {
+bool image::create(int w, int h) {
     width = w;
     height = h;
     setTexelOffsets();
-    
-    shaderID = shader;
-    glUseProgram(shaderID);
-    
-    //get uniform locations from shader
-
-    GLuint convolutionMatrixID = glGetUniformLocation(
-        shaderID, "convolutionMatrix"
-    );
-    GLuint texelOffsetID = glGetUniformLocation(
-        shaderID, "texelOffsets"
-    );
-    
-    //set texel offsets and initial convolution matrix
-    glUniform2fv(texelOffsetID, 25, (GLfloat*)texel_offsets);
-    glUniform1fv(convolutionMatrixID, 25, convolution_default);
     
     //array object
     glGenVertexArrays(1, &vertexArrayID);
@@ -155,8 +118,10 @@ bool image::create(int w, int h, GLuint shader) {
         GL_FLOAT,           //type of the pixel data
         0                   //pointer to pixels: empty
     );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
+    
+    //minify & magnify filters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 
     return true;
 }
@@ -174,7 +139,7 @@ bool image::setAsTestPattern() {
             float f_x = 2*(float)x / (float)width - 1;
             float f_y = 2*(float)y / (float)height - 1;
             float value = (f_x*f_x + f_y * f_y);
-            if(value > 0.01) pixels[i] = -1;
+            if(value > 0.01) pixels[i] = 0;
             else pixels[i] = 1;
         }
     }
@@ -184,38 +149,13 @@ bool image::setAsTestPattern() {
 }
 
 
-bool image::render(GLfloat convolutionLevel, GLfloat dryLevel) {
-    glUseProgram(shaderID);
+//bool image::render(GLfloat convolutionLevel, GLfloat dryLevel) {
+bool image::render() {
     
-    GLuint convolutionMatrixID = glGetUniformLocation(
-        shaderID, "convolutionMatrix"
-    );
-    GLuint convolutionLevelID = glGetUniformLocation(
-        shaderID, "convolutionLevel"
-    );
-    GLuint dryLevelID = glGetUniformLocation(
-        shaderID, "dryLevel"
-    );
-    
-    switch(convolutionType) {
-        case LAPLACIAN:
-            glUniform1fv(convolutionMatrixID, 25, convolution_laplacian);
-            break;
-        case BLUR:
-            glUniform1fv(convolutionMatrixID, 25, convolution_blur);
-            break;
-        default:
-            glUniform1fv(convolutionMatrixID, 25, convolution_default);
-    }
-    
-    glUniform1f(convolutionLevelID, convolutionLevel);
-    glUniform1f(dryLevelID, dryLevel);
-    
-    //get uniform locations from shader
+    //set transformation
     GLuint transformationMatrixID = glGetUniformLocation(
-        shaderID, "transformation"
+        getCurrentShader(), "transformation"
     );
-    
     glUniformMatrix4fv(
         transformationMatrixID,
         1, 
@@ -223,9 +163,13 @@ bool image::render(GLfloat convolutionLevel, GLfloat dryLevel) {
         &transformation[0][0]
     );
 
-    //set texel offsets 
+    //set texel offsets
+    GLuint texelOffsetID = glGetUniformLocation(
+        getCurrentShader(), "texelOffsets"
+    );
     glUniform2fv(texelOffsetID, 25, (GLfloat*)texel_offsets);
-            
+
+
     glBindVertexArray(vertexArrayID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     

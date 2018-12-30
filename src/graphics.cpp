@@ -1,7 +1,5 @@
 #include "graphics.h"
-
-#include "lodepng.h"
-#include "loadShaders.h"
+#include "convolutionMatrix.h"
 
 float randomf() {
     float result = (float)rand() / RAND_MAX;
@@ -9,9 +7,17 @@ float randomf() {
 }
 
 GLFWwindow* window;
-GLuint shaders[3] = {0, 0, 0};
-image images[3];
+shader shaders[3];
+image images[4];
+convolutionMatrix blurMatrix(BLUR);
+convolutionMatrix laplacianMatrix(LAPLACIAN);
 
+bool run = true;
+bool changes = true;
+
+bool running() {
+    return run;
+}
 
 bool initialize() {
     if(!glfwInit() ) {
@@ -40,42 +46,48 @@ bool initialize() {
     
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
     
+    glfwSetTime(1);
+    
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
-    shaders[0] = loadShaders(
+    
+    //0: palette shader
+    shaders[0].load(
         "data/default.vertexShader", 
         "data/palette.fragmentShader"
     );
-    shaders[1] = loadShaders(
+
+    //1: convolution shader
+    shaders[1].load(
         "data/default.vertexShader", 
         "data/convolution.fragmentShader"
     );
-    shaders[2] = loadShaders(
-        "data/default.vertexShader", 
-        "data/reaction.fragmentShader"
-    );    
+    shaders[1].use();
+    shaders[1].setFilteringLevel(1, 0);
+    shaders[1].setConvolutionMatrix(blurMatrix.get() );
+    
+    //2: default (copy) shader
+    shaders[2].load(
+        "data/default.vertexShader",
+        "data/default.fragmentShader"
+    );
     
     float n = 0.5;
-    images[0].create(640*n, 512*n, shaders[0]); //output shader
-    images[1].create(640*n, 512*n, shaders[1]); //convolution shader
-    images[2].create(640*n, 512*n, shaders[1]); //convolution shader
-    images[3].create(640*n, 512*n, shaders[2]); //reaction shader
     
-    //images[1].convolutionType = LAPLACIAN;
-    //images[2].convolutionType = DEFAULT;
-        
-    images[0].setAsTestPattern();
+    images[0].create(640*n, 512*n);
+    images[1].create(640*n, 512*n);
+    
     images[1].setAsTestPattern();
-    images[2].setAsTestPattern();
     
     return true;
 }
 
 
-bool keepRunning() {
-    return (
-        glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS 
-        && glfwWindowShouldClose(window) == 0
-    );  
+void handleEvents() {
+    glfwPollEvents();
+    
+    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS 
+            || glfwWindowShouldClose(window) != 0)
+        run = false;
 }
 
 
@@ -84,28 +96,37 @@ void clear() {
 }
 
 
-void render() {  
-    //draw 1 on 2
-    images[2].setAsRenderTarget();
-    images[1].render();
+bool resetRenderTarget() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, 640*2, 512*2);
+    return true;
+}
 
-    //draw 2 on 1
-    images[1].setAsRenderTarget();
-    images[2].render();
-/*
-    //draw 3 on 2 using the reaction shader
-    images[1].setAsRenderTarget();
-    images[3].render();
-*/
-    //copy 1 on 0
+
+void render() {
+    /*
+    if(glfwGetTime() < 1.0 || run == false)
+        return;
+    
+    glfwSetTime(0);
+    */
+    //render 1 on 0 using the laplacian filter
+    shaders[1].use();
+    shaders[1].setConvolutionMatrix(laplacianMatrix.get() );
+    shaders[1].setFilteringLevel(0.0065, 1);
     images[0].setAsRenderTarget();
     images[1].render();
     
-    //draw 0 on screen using the 'palette' shader
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 640*2, 512*2);
+    //render 0 on 1 using the blur filter
+    shaders[1].setConvolutionMatrix(blurMatrix.get() );
+    shaders[1].setFilteringLevel(0, 1);
+    images[1].setAsRenderTarget();
+    images[0].render();
+    
+    //render 1 on screen using the palette shader
+    shaders[0].use();
+    resetRenderTarget();
     images[0].render();
 
     glfwSwapBuffers(window);
-    glfwPollEvents();
 }

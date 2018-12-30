@@ -1,11 +1,17 @@
 #version 330 core
 
+//from image:
 in vec2 UV;
 uniform sampler2D tx;
+uniform vec2[25] texelOffsets;
+
+//from convolution filter:
+uniform float[25] convolutionMatrix;
+uniform float convolutionLevel;
+uniform float dryLevel;
 
 out vec3 outColor;
 
-uniform mat4 colorTransform;
 
 void main() {
     float newValue;

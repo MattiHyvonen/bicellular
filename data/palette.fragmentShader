@@ -1,14 +1,26 @@
 #version 330 core
 
+//from image:
 in vec2 UV;
 uniform sampler2D tx;
+uniform vec2[25] texelOffsets;
+
+//from convolution filter:
+uniform float[25] convolutionMatrix;
+uniform float convolutionLevel;
+uniform float dryLevel;
 
 out vec3 outColor;
 
-uniform mat4 colorTransform;
 
 void main() {
     float txColor = texture(tx, UV).r;
-    float outValue = (txColor + 1)/2;
-    outColor = vec3(outValue, outValue, outValue);
+    
+    float b;
+    if(abs(txColor) <= 10)
+        b = 0;
+    else 
+        b = 1;
+        
+    outColor = vec3(txColor, -txColor, b);
 }
