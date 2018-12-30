@@ -5,7 +5,8 @@ in vec2 UV;
 uniform sampler2D tx;
 uniform vec2[25] texelOffsets;
 
-//from convolution filter:
+//from filter:
+uniform sampler2D map;
 uniform float[25] convolutionMatrix;
 uniform float convolutionLevel;
 uniform float dryLevel;
@@ -14,13 +15,9 @@ out vec3 outColor;
 
 
 void main() {
-    float txColor = texture(tx, UV).r;
+    float value = (texture(tx, UV).r + 1) / 2;
+    float outValue = 1 - value;
+    outValue *= outValue;
     
-    float b;
-    if(abs(txColor) <= 10)
-        b = 0;
-    else 
-        b = 1;
-        
-    outColor = vec3(txColor, -txColor, b);
+    outColor = vec3(outValue, outValue, outValue);
 }

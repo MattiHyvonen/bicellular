@@ -14,6 +14,7 @@
 enum convolutionTypeEnum{
     BLUR,
     LAPLACIAN,
+    NEIGHBOURHOOD,
     DEFAULT
 };
 
@@ -76,7 +77,22 @@ static const std::array<float, 25> convolution_default = {
      0,  0,  0,  0,  0
 };
 
-
+/*
+static const std::array<float, 25> neighbourhood = {
+     1,  3,  3,  3,  1,
+     3,  2,  1,  2,  3,
+     3,  1,  0,  1,  3,
+     3,  2,  1,  2,  3,
+     1,  3,  3,  3,  1
+};
+*/
+static const std::array<float, 25> neighbourhood = {
+     0,  1,  1,  1,  0,
+     1,  2,  3,  2,  1,
+     1,  3,  0,  3,  1,
+     1,  2,  3,  2,  1,
+     0,  1,  1,  1,  0
+};
 
 class convolutionMatrix{
     std::array<float, 25> matrix;
@@ -96,12 +112,12 @@ public:
         //if sum is 0, scale everything between -1 and 1
         if(sum == 0) {
             return;
-/*          min *= -1;
+            min *= -1;
             if(min > max) max = min;
             if(max == 0) return;
             for(int i = 0; i < 25; i++)
                 matrix[i] /= max;      
-*/            
+            
         }
         
         //if sum is nonzero, scale everything so that it is 1
@@ -110,7 +126,6 @@ public:
                 matrix[i] /= sum;
         }
 
-        std::cout << "normalize matrix: \nsum: " << sum << "\nmax: "<< max << "\n";
     }
 
     
@@ -127,6 +142,9 @@ public:
                 break;
             case LAPLACIAN:
                 set(convolution_laplacian);
+                break;
+            case NEIGHBOURHOOD:
+                set(neighbourhood);
                 break;
             default:
                 set(convolution_default);

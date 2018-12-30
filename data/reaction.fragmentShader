@@ -6,6 +6,7 @@ uniform sampler2D tx;
 uniform vec2[25] texelOffsets;
 
 //from convolution filter:
+uniform sampler2D map;
 uniform float[25] convolutionMatrix;
 uniform float convolutionLevel;
 uniform float dryLevel;
@@ -14,9 +15,22 @@ out float outColor;
 
 
 void main() {
-    float txValue = texture(tx, UV).r;
+    //state: sum of neighbouring values
+    float state = 0;
+    for(int i=0; i<25; i++) {
+        int y = i / 5;
+        int x = i % 5;
+        state += texture(tx, UV + texelOffsets[i]).r * convolutionMatrix[i];
+    }
     
-    float result = txValue;
-
-    outColor = result;
+    //look up from the map what value results from this state
+    float value = texture(map, vec2(state, 0) ).r * convolutionLevel;
+    float txValue = texture(tx, UV).r * dryLevel;
+    float outValue = value + txValue;
+    
+    if(outValue > 1) outValue = 1;
+    if(outValue < -1) outValue = -1;
+    
+    outColor = outValue;
+    
 }

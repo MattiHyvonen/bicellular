@@ -37,3 +37,12 @@ bool shader::setConvolutionMatrix(const std::array<float, 25>& convmat) {
     
     return true;
 }
+
+
+bool shader::setMap(texture& mapTexture) {
+    //bind to texture unit 1
+    mapTexture.bindTexture(1);
+    GLuint mapID = glGetUniformLocation(id, "map");
+    glUniform1i(mapID, 1);
+    return true;
+}

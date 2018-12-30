@@ -1,16 +1,15 @@
 #include "graphics.h"
 #include "convolutionMatrix.h"
+#include "utility.h"
 
-float randomf() {
-    float result = (float)rand() / RAND_MAX;
-    return result;
-}
 
 GLFWwindow* window;
 shader shaders[3];
-image images[4];
+image images[2];
+colorMap palette;
 convolutionMatrix blurMatrix(BLUR);
 convolutionMatrix laplacianMatrix(LAPLACIAN);
+convolutionMatrix neighbourhoodMatrix(NEIGHBOURHOOD);
 
 bool run = true;
 bool changes = true;
@@ -56,27 +55,36 @@ bool initialize() {
         "data/palette.fragmentShader"
     );
 
-    //1: convolution shader
+    //1: reaction shader
     shaders[1].load(
         "data/default.vertexShader", 
-        "data/convolution.fragmentShader"
+        "data/reaction.fragmentShader"
     );
     shaders[1].use();
     shaders[1].setFilteringLevel(1, 0);
     shaders[1].setConvolutionMatrix(blurMatrix.get() );
+    palette.create(2048);
+    shaders[1].setMap(palette);    
     
-    //2: default (copy) shader
+    //2: convolution shader (diffusion)
     shaders[2].load(
         "data/default.vertexShader",
-        "data/default.fragmentShader"
+        "data/convolution.fragmentShader"
     );
     
-    float n = 0.5;
+    float n = 1;
     
     images[0].create(640*n, 512*n);
     images[1].create(640*n, 512*n);
-    
-    images[1].setAsTestPattern();
+
+    images[0].setAsTestPattern();
+  
+    shaders[2].use();
+    shaders[2].setFilteringLevel(0, 1);
+    shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
+    images[1].setAsRenderTarget();
+    images[0].transform(0, 0, 0.1);
+    images[0].render();
     
     return true;
 }
@@ -104,29 +112,29 @@ bool resetRenderTarget() {
 
 
 void render() {
-    /*
-    if(glfwGetTime() < 1.0 || run == false)
-        return;
     
-    glfwSetTime(0);
-    */
-    //render 1 on 0 using the laplacian filter
+    //render 1 on 0, reaction
     shaders[1].use();
-    shaders[1].setConvolutionMatrix(laplacianMatrix.get() );
-    shaders[1].setFilteringLevel(0.0065, 1);
+    shaders[1].setFilteringLevel(0.2, 1);
+    shaders[1].setConvolutionMatrix(neighbourhoodMatrix.get() );
     images[0].setAsRenderTarget();
+    images[1].transform(0, 0, 1);
     images[1].render();
     
-    //render 0 on 1 using the blur filter
-    shaders[1].setConvolutionMatrix(blurMatrix.get() );
-    shaders[1].setFilteringLevel(0, 1);
+    //render 0 on 1, diffusion
+    shaders[2].use();
+    shaders[2].setFilteringLevel(0.0005, 1);
+    shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
     images[1].setAsRenderTarget();
+    images[0].transform(0, 0, 1);
     images[0].render();
     
-    //render 1 on screen using the palette shader
+    //render 0 on screen using the palette shader
     shaders[0].use();
     resetRenderTarget();
-    images[0].render();
+    images[1].transform(0, 0, 1);
+    images[1].render();
 
     glfwSwapBuffers(window);
+    clear();
 }

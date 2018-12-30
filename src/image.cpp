@@ -1,5 +1,6 @@
 #include "image.h"
-
+#include "waveset.h"
+#include <iostream>
 
 static const GLfloat rectangleVertices[] = {
         -1.0f, -1.0f, 0.0f,
@@ -29,9 +30,20 @@ GLuint getCurrentShader() {
 }
 
 
-bool image::setFromPixels(GLfloat* pixels) {
-//glUseProgram(shaderID);
+bool texture::bindTexture(GLuint textureUnit) {
+    if(textureUnit > 80)
+        return false;
+    glActiveTexture(GL_TEXTURE0 + textureUnit);
     glBindTexture(GL_TEXTURE_2D, textureID);
+    return true;
+}
+
+
+bool texture::setFromPixels(GLfloat* pixels) {
+    //bind to texture unit 0
+    bindTexture(0);
+    
+    //set pixels and settings
     glTexImage2D(
         GL_TEXTURE_2D,      //target
         0,                  //level of detail (mipmap reduction)
@@ -45,7 +57,24 @@ bool image::setFromPixels(GLfloat* pixels) {
     );        
     return true;
 }
+
+
+bool texture::create(int w, int h) {
+    width = w;
+    height = h;
     
+    //generate
+    glGenTextures(1, &textureID);
+    
+    //set as empty image
+    setFromPixels(0);
+
+    //minify & magnify filters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    
+    return true;
+}
     
     
 bool image::setTexelOffsets() {
@@ -69,12 +98,15 @@ void image::transform(float x, float y, float scale) {
     transformation = glm::mat4(1.0f);
     transformation = glm::translate(transformation, glm::vec3(x, y, 0) );
     transformation = glm::scale(transformation, glm::vec3(scale, scale, 1) );
+    //transformation = glm::rotate(transformation, 0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 
 bool image::create(int w, int h) {
     width = w;
     height = h;
+    texture::create(w,h);
+    
     setTexelOffsets();
     
     //array object
@@ -104,25 +136,6 @@ bool image::create(int w, int h) {
     //framebuffer 
     glGenFramebuffers(1, &frameBufferID);
     
-    //texture
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(
-        GL_TEXTURE_2D,      //target
-        0,                  //level of detail (mipmap reduction)
-        GL_R32F,            //internal format
-        width,              //width
-        height,             //height
-        0,                  //border: must always be 0
-        GL_RED,             //format of pixel data
-        GL_FLOAT,           //type of the pixel data
-        0                   //pointer to pixels: empty
-    );
-    
-    //minify & magnify filters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
-
     return true;
 }
 
@@ -131,6 +144,8 @@ bool image::setAsTestPattern() {
     if(width <= 0 || height <= 0)
         return false;
 
+    waveset w;
+    
     //generate the pixel data to array
     GLfloat* pixels = new GLfloat[height * width];
     for(int y =0; y < height; y++) {
@@ -138,9 +153,8 @@ bool image::setAsTestPattern() {
             int i = y * width + x;
             float f_x = 2*(float)x / (float)width - 1;
             float f_y = 2*(float)y / (float)height - 1;
-            float value = (f_x*f_x + f_y * f_y);
-            if(value > 0.01) pixels[i] = 0;
-            else pixels[i] = 1;
+            float f = f_x * f_x + f_y * f_y;
+            pixels[i] = w.getValueAt(f);            
         }
     }
     setFromPixels(pixels);
@@ -149,7 +163,6 @@ bool image::setAsTestPattern() {
 }
 
 
-//bool image::render(GLfloat convolutionLevel, GLfloat dryLevel) {
 bool image::render() {
     
     //set transformation
@@ -171,7 +184,7 @@ bool image::render() {
 
 
     glBindVertexArray(vertexArrayID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    bindTexture(0);
     
     glEnableVertexAttribArray(0); //for vertices
     glBindBuffer(GL_ARRAY_BUFFER, vertexBufferID);
@@ -191,7 +204,8 @@ bool image::render() {
 
 bool image::setAsRenderTarget() {
     glBindFramebuffer(GL_FRAMEBUFFER, frameBufferID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    bindTexture(0);
+    
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureID, 0);
     GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, drawBuffers);
@@ -201,3 +215,48 @@ bool image::setAsRenderTarget() {
     
     return true;
 }   
+
+
+bool colorMap::create(int w) {
+    waveset ws;
+    
+    image::create(w, 1);
+    GLfloat* pixels = new GLfloat[width];
+    
+    //set pixels from wave function
+    float min = 0;
+    float max = 0;
+    for(int x=0; x < width; x++) {
+        float f_x = 2*(float)x / (float)width - 1;
+        pixels[x] = ws.getValueAt(f_x);
+        if(pixels[x] < min) 
+            min = pixels[x];
+        if(pixels[x] > max)
+            max = pixels[x];
+    }
+    
+    if(min >= max)
+        return false;
+    
+    float sum = 0;
+    float min2 = 0;
+    float max2 = 0;
+    //normalize to {-1...1}
+    for(int x=0; x < width; x++) {
+        float scale = max - min;
+        pixels[x] *= (1.0/scale);
+        sum += pixels[x];
+        if(pixels[x] < min2) 
+            min2 = pixels[x];
+        if(pixels[x] > max2)
+            max2 = pixels[x];        
+    }
+    std::cout << "normalized palette\n sum = " << sum << "\n"
+    <<"max = " << max2 << "\n"
+    <<"min = " << min2 << "\n";
+    setFromPixels(pixels);
+    delete[] pixels;
+    
+    return true;
+}
+
