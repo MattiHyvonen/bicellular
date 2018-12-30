@@ -110,8 +110,6 @@ void render() {
     
     glfwSetTime(0);
     */
-    
-    //diffusion:
     //render 1 on 0 using the laplacian filter
     shaders[1].use();
     shaders[1].setConvolutionMatrix(laplacianMatrix.get() );
