@@ -89,7 +89,7 @@ static const std::array<float, 25> neighbourhood = {
 static const std::array<float, 25> neighbourhood = {
      0,  1,  1,  1,  0,
      1,  2,  3,  2,  1,
-     1,  3,  0,  3,  1,
+     1,  3, -5,  3,  1,
      1,  2,  3,  2,  1,
      0,  1,  1,  1,  0
 };

@@ -20,8 +20,8 @@ public:
 
 
 class waveset{
-    const int MAX_WAVES = 100;
-    const int MAX_F = 50;
+    const int MAX_WAVES = 20;
+    const int MAX_F = 15;
     std::vector<wave> waves;
 public:
     waveset() {

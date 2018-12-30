@@ -123,7 +123,7 @@ void render() {
     
     //render 0 on 1, diffusion
     shaders[2].use();
-    shaders[2].setFilteringLevel(0.0005, 1);
+    shaders[2].setFilteringLevel(0.0004, 1);
     shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
     images[1].setAsRenderTarget();
     images[0].transform(0, 0, 1);
