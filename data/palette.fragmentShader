@@ -15,6 +15,7 @@ out vec3 outColor;
 
 
 void main() {
-    float value = (texture(tx, UV).r);
-    outColor = vec3(value, -value, abs(value) );
+    vec2 txColor = texture(tx, UV).rg;
+    float b = txColor.r * txColor.r + txColor.g * txColor.g;
+    outColor = vec3(txColor.r, txColor.g, b);
 }

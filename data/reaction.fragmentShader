@@ -11,25 +11,24 @@ uniform float[25] convolutionMatrix;
 uniform float convolutionLevel;
 uniform float dryLevel;
 
-out float outColor;
+out vec2 outColor;
 
 
 void main() {
     //state: sum of neighbouring values
-    float state = 0;
+    
+    vec2 state = vec2(0,0);
     for(int i=0; i<25; i++) {
         int y = i / 5;
         int x = i % 5;
-        state += texture(tx, UV + texelOffsets[i]).r * convolutionMatrix[i];
+        state += texture(tx, UV + texelOffsets[i]).rg * convolutionMatrix[i];
     }
     
     //look up from the map what value results from this state
-    float value = texture(map, vec2(state, 0) ).r * convolutionLevel;
-    float txValue = texture(tx, UV).r * dryLevel;
-    float outValue = value + txValue;
-    
-    if(outValue > 1) outValue = 1;
-    if(outValue < -1) outValue = -1;
+    // does the state.xy span the whole map?
+    vec2 value = texture(map, vec2(state.x, state.y)).rg * convolutionLevel;
+    vec2 txValue = texture(tx, UV).rg * dryLevel;
+    vec2 outValue = value + txValue;
     
     outColor = outValue;
     

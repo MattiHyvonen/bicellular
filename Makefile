@@ -1,6 +1,7 @@
 SRC=src/utility.cpp \
 src/lodepng.cpp \
 src/shader.cpp \
+src/waveField.cpp \
 src/image.cpp \
 src/graphics.cpp \
 src/main.cpp

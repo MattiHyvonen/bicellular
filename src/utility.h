@@ -6,3 +6,4 @@
 #include <time.h>
 
 float randomf();
+float randomf(float min, float max);

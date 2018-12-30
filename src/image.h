@@ -8,7 +8,7 @@ protected:
     int height = 0;
 public:
     bool bindTexture(GLuint textureUnit = 0);
-    bool setFromPixels(GLfloat* pixels);
+    bool setFromPixels(glm::vec2* pixels);
     bool create(int w, int h);
 };
 
@@ -45,6 +45,6 @@ public:
 
 class colorMap : public image{
 public:
-    bool create(int w = 1024);
+    bool create(int w = 1024, int h = 1024);
     bool normalize();
 };

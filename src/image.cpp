@@ -1,5 +1,5 @@
 #include "image.h"
-#include "waveset.h"
+#include "waveField.h"
 #include <iostream>
 
 static const GLfloat rectangleVertices[] = {
@@ -39,7 +39,7 @@ bool texture::bindTexture(GLuint textureUnit) {
 }
 
 
-bool texture::setFromPixels(GLfloat* pixels) {
+bool texture::setFromPixels(glm::vec2* pixels) {
     //bind to texture unit 0
     bindTexture(0);
     
@@ -47,11 +47,11 @@ bool texture::setFromPixels(GLfloat* pixels) {
     glTexImage2D(
         GL_TEXTURE_2D,      //target
         0,                  //level of detail (mipmap reduction)
-        GL_R32F,            //internal format
+        GL_RG32F,           //internal format
         width,              //width
         height,             //height
         0,                  //border: must always be 0
-        GL_RED,             //format of pixel data
+        GL_RG,              //format of pixel data
         GL_FLOAT,           //type of the pixel data
         pixels              //pointer to pixels
     );        
@@ -144,17 +144,24 @@ bool image::setAsTestPattern() {
     if(width <= 0 || height <= 0)
         return false;
 
-    waveset w;
+    waveSeries wr, wg;
+    wr.randomize();
+    wr.normalize();
+    wg.randomize();
+    wg.normalize();
     
     //generate the pixel data to array
-    GLfloat* pixels = new GLfloat[height * width];
+    glm::vec2* pixels = new glm::vec2[height * width];
     for(int y =0; y < height; y++) {
         for(int x=0; x < width; x++) {
             int i = y * width + x;
             float f_x = 2*(float)x / (float)width - 1;
             float f_y = 2*(float)y / (float)height - 1;
             float f = f_x * f_x + f_y * f_y;
-            pixels[i] = w.getValueAt(f);            
+            pixels[i] = glm::vec2(
+                    wr.getAt(glm::vec2(f_x, f_y) ),
+                    wg.getAt(glm::vec2(f_x, f_y) )
+            );
         }
     }
     setFromPixels(pixels);
@@ -217,43 +224,31 @@ bool image::setAsRenderTarget() {
 }   
 
 
-bool colorMap::create(int w) {
-    waveset ws;
+bool colorMap::create(int w, int h) {
+    waveSeries wr, wg;
+    wr.randomize();
+    wr.normalize();
+    wg.randomize();
+    wg.normalize();
     
-    image::create(w, 1);
-    GLfloat* pixels = new GLfloat[width];
+    image::create(w, h);
+    glm::vec2* pixels = new glm::vec2[width * height];
     
     //set pixels from wave function
     float min = 0;
     float max = 0;
-    for(int x=0; x < width; x++) {
-        float f_x = 2*(float)x / (float)width - 1;
-        pixels[x] = ws.getValueAt(f_x);
-        if(pixels[x] < min) 
-            min = pixels[x];
-        if(pixels[x] > max)
-            max = pixels[x];
+    for(int y=0; y<height; y++) {
+        for(int x=0; x < width; x++) {
+            float f_x = 2*(float)x / (float)width - 1;
+            float f_y = 2*(float)y / (float)height - 1;
+            int i =y*width + x; 
+            pixels[i] = glm::vec2(
+                wr.getAt(glm::vec2(f_x, f_y) ), 
+                wg.getAt(glm::vec2(f_x, f_y) ) 
+            );
+        }
     }
-    
-    if(min >= max)
-        return false;
-    
-    float sum = 0;
-    float min2 = 0;
-    float max2 = 0;
-    //normalize to {-1...1}
-    for(int x=0; x < width; x++) {
-        float scale = max - min;
-        pixels[x] *= (1.0/scale);
-        sum += pixels[x];
-        if(pixels[x] < min2) 
-            min2 = pixels[x];
-        if(pixels[x] > max2)
-            max2 = pixels[x];        
-    }
-    std::cout << "normalized palette\n sum = " << sum << "\n"
-    <<"max = " << max2 << "\n"
-    <<"min = " << min2 << "\n";
+
     setFromPixels(pixels);
     delete[] pixels;
     

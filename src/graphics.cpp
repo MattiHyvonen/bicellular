@@ -63,7 +63,7 @@ bool initialize() {
     shaders[1].use();
     shaders[1].setFilteringLevel(1, 0);
     shaders[1].setConvolutionMatrix(blurMatrix.get() );
-    palette.create(2048);
+    palette.create(1024, 1024);
     shaders[1].setMap(palette);    
     
     //2: convolution shader (diffusion)
@@ -72,13 +72,13 @@ bool initialize() {
         "data/convolution.fragmentShader"
     );
     
-    float n = 1;
+    float n = 4;
     
     images[0].create(640*n, 512*n);
     images[1].create(640*n, 512*n);
 
     images[0].setAsTestPattern();
-  
+
     shaders[2].use();
     shaders[2].setFilteringLevel(0, 1);
     shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
@@ -115,7 +115,7 @@ void render() {
     
     //render 1 on 0, reaction
     shaders[1].use();
-    shaders[1].setFilteringLevel(0.2, 1);
+    shaders[1].setFilteringLevel(0.4, 1);
     shaders[1].setConvolutionMatrix(neighbourhoodMatrix.get() );
     images[0].setAsRenderTarget();
     images[1].transform(0, 0, 1);
@@ -123,7 +123,7 @@ void render() {
     
     //render 0 on 1, diffusion
     shaders[2].use();
-    shaders[2].setFilteringLevel(0.0004, 1);
+    shaders[2].setFilteringLevel(0.001, 1);
     shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
     images[1].setAsRenderTarget();
     images[0].transform(0, 0, 1);
