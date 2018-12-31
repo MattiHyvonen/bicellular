@@ -7,7 +7,7 @@ src/graphics.cpp \
 src/main.cpp
 CFLAGS=-std=c++14
 LFLAGS=-lGLEW -lGL -lglfw
-EXECUTABLE=test
+EXECUTABLE=bicellular
 
 all:
 	g++ $(SRC) $(CFLAGS) $(LFLAGS) -o $(EXECUTABLE)

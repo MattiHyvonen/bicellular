@@ -1,5 +1,6 @@
 #pragma once
 #include "GL.h"
+#include <string>
 
 class texture{
 protected:
@@ -39,6 +40,7 @@ public:
     bool setAsTestPattern();
     bool render();
     bool setAsRenderTarget();
+    bool saveAsPNG(std::string filename);
     
 };
 

@@ -24,3 +24,9 @@ bool resetRenderTarget();
 void render();
 
 void handleEvents();
+
+bool saveFrame(std::string path, 
+               int startFrame = 0, 
+               int frames = 1500, 
+               int frameSkip = 0
+              );

@@ -5,7 +5,7 @@
 
 GLFWwindow* window;
 shader shaders[3];
-image images[2];
+image images[3];
 colorMap palette;
 convolutionMatrix blurMatrix(BLUR);
 convolutionMatrix laplacianMatrix(LAPLACIAN);
@@ -27,7 +27,7 @@ bool initialize() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     
-    window = glfwCreateWindow(640*2, 512*2, "OpenGL program", NULL, NULL);
+    window = glfwCreateWindow(1920, 1080, "OpenGL program", NULL, NULL);
     if(window == NULL) {
         std::cout << "couldn't create window!\n";
         glfwTerminate();
@@ -63,7 +63,7 @@ bool initialize() {
     shaders[1].use();
     shaders[1].setFilteringLevel(1, 0);
     shaders[1].setConvolutionMatrix(blurMatrix.get() );
-    palette.create(1024, 1024);
+    palette.create(512, 512);
     shaders[1].setMap(palette);    
     
     //2: convolution shader (diffusion)
@@ -72,10 +72,12 @@ bool initialize() {
         "data/convolution.fragmentShader"
     );
     
-    float n = 4;
+    float n = 1;
     
-    images[0].create(640*n, 512*n);
-    images[1].create(640*n, 512*n);
+    images[0].create(1920*n, 1080*n);
+    images[1].create(1920*n, 1080*n);
+    
+    images[2].create(1920, 1080); //to render out
 
     images[0].setAsTestPattern();
 
@@ -85,6 +87,8 @@ bool initialize() {
     images[1].setAsRenderTarget();
     images[0].transform(0, 0, 0.1);
     images[0].render();
+    
+    resetRenderTarget();
     
     return true;
 }
@@ -106,7 +110,7 @@ void clear() {
 
 bool resetRenderTarget() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, 640*2, 512*2);
+    glViewport(0, 0, 1920, 1080);
     return true;
 }
 
@@ -115,7 +119,7 @@ void render() {
     
     //render 1 on 0, reaction
     shaders[1].use();
-    shaders[1].setFilteringLevel(0.4, 1);
+    shaders[1].setFilteringLevel(0.5, 1);
     shaders[1].setConvolutionMatrix(neighbourhoodMatrix.get() );
     images[0].setAsRenderTarget();
     images[1].transform(0, 0, 1);
@@ -123,10 +127,10 @@ void render() {
     
     //render 0 on 1, diffusion
     shaders[2].use();
-    shaders[2].setFilteringLevel(0.001, 1);
+    shaders[2].setFilteringLevel(0.007, 1);
     shaders[2].setConvolutionMatrix(laplacianMatrix.get() );
     images[1].setAsRenderTarget();
-    images[0].transform(0, 0, 1);
+    images[0].transform(0, 0, 1.0011);
     images[0].render();
     
     //render 0 on screen using the palette shader
@@ -134,7 +138,42 @@ void render() {
     resetRenderTarget();
     images[1].transform(0, 0, 1);
     images[1].render();
-
+    
     glfwSwapBuffers(window);
     clear();
 }
+
+
+//NOTE: accesses images[2] with no checking!
+//return false if reached end or there was error, true otherwise
+bool saveFrame(std::string path, int startFrame, int frames, int frameSkip) {
+    static int frameCount = -1;
+    frameCount++;
+    
+    //not started yet
+    if(frameCount < startFrame)
+        return true;
+    
+    //already finished
+    if(frameCount > frames + startFrame)
+        return false;
+    
+    //check frame skipping, render and save frame
+    if( frameSkip == 0 || (frameCount-startFrame)%frameSkip == 0) {
+        
+        //render 0 on 2 using the palette shader
+        shaders[0].use();
+        images[2].setAsRenderTarget();
+        images[1].transform(0, 0, 1);
+        images[1].render();
+        
+        std::string filename = generateFrameFilename(path + "frame", ".png", frames);
+        if(filename != "")
+            images[2].saveAsPNG(filename);
+        else
+            return false;
+    }
+
+    return true;
+}
+

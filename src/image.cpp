@@ -1,5 +1,6 @@
 #include "image.h"
 #include "waveField.h"
+#include "lodepng.h"
 #include <iostream>
 
 static const GLfloat rectangleVertices[] = {
@@ -98,7 +99,7 @@ void image::transform(float x, float y, float scale) {
     transformation = glm::mat4(1.0f);
     transformation = glm::translate(transformation, glm::vec3(x, y, 0) );
     transformation = glm::scale(transformation, glm::vec3(scale, scale, 1) );
-    //transformation = glm::rotate(transformation, 0.005f, glm::vec3(0.0f, 0.0f, 1.0f));
+    transformation = glm::rotate(transformation, 0.00012f, glm::vec3(0.0f, 0.0f, 1.0f));
 }
 
 
@@ -222,6 +223,32 @@ bool image::setAsRenderTarget() {
     
     return true;
 }   
+
+
+bool image::saveAsPNG(std::string filename) {
+    
+    bindTexture(0);
+
+    unsigned char pixels[(long)width * (long)height * 4];
+    
+    //read the pixels as 3 integers each
+    glGetTexImage(
+        GL_TEXTURE_2D,
+        0, 
+        GL_RGBA, 
+        GL_BYTE, 
+        pixels
+    );
+    unsigned error = lodepng::encode(filename, pixels, width, height);
+    if(error) {
+        std::cout << "couldn't save " << filename << "\n";
+        std::cout << "encoder error " 
+                  << error << ": "<< lodepng_error_text(error) 
+                  << std::endl;
+        return false;
+    }
+    return true;
+}
 
 
 bool colorMap::create(int w, int h) {
