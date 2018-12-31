@@ -10,25 +10,23 @@ uniform float[25] convolutionMatrix;
 uniform float convolutionLevel;
 uniform float dryLevel;
 
-out vec3 outColor;
+out vec2 outColor;
 
 
 void main() {
-    vec3 txColor = texture(tx, UV).rgb;
+    vec2 txColor = texture(tx, UV).rg;
 
-    vec3 value = vec3(0, 0, 0);
+    vec2 value = vec2(0, 0);
     
     for(int i=0; i<25; i++) {
         int y = i / 5;
         int x = i % 5;
-        vec3 v = texture(tx, UV + texelOffsets[i]).rgb;
-        v *= convolutionMatrix[i];
-        value += v;
+        vec2 rg = texture(tx, UV + texelOffsets[i]).rg;
+        rg *= convolutionMatrix[i];
+        value += rg;
     }
     
-    
-    vec3 outValue = dryLevel * txColor + convolutionLevel * value;
-    outValue.b = 0;
+    vec2 outValue = dryLevel * txColor + convolutionLevel * value;
         
     outColor = outValue;
 }

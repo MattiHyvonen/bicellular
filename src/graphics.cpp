@@ -72,12 +72,12 @@ bool initialize() {
         "data/convolution.fragmentShader"
     );
     
-    float n = 2;
+    float n = 1;
     
     images[0].create(1920*n, 1080*n);
     images[1].create(1920*n, 1080*n);
     
-    images[2].create(1920, 1080, 3); //to render out
+    images[2].create(1920, 1080); //to render out
 
     images[0].setAsTestPattern();
 

@@ -11,7 +11,7 @@ uniform float[25] convolutionMatrix;
 uniform float convolutionLevel;
 uniform float dryLevel;
 
-out vec3 outColor;
+out vec2 outColor;
 
 
 void main() {
@@ -28,9 +28,7 @@ void main() {
     // does the state.xy span the whole map?
     vec2 value = texture(map, vec2(state.x, state.y)).rg * convolutionLevel;
     vec2 txValue = texture(tx, UV).rg * dryLevel;
-    vec3 outValue;
-    outValue.rg = value + txValue;
-    outValue.b = 0;
+    vec2 outValue = value + txValue;
     
     outColor = outValue;
     
