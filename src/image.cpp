@@ -40,7 +40,31 @@ bool texture::bindTexture(GLuint textureUnit) {
 }
 
 
-bool texture::setFromPixels(glm::vec2* pixels) {
+bool texture::setFromPixels(glm::vec2* pixels, int channels) {
+    
+    if(channels <1 || channels > 4)
+        return false;
+    
+    GLenum inFormat, pxFormat;
+    
+    switch (channels) {
+        case 1:
+            inFormat = GL_R32F;
+            pxFormat = GL_R;
+            break;
+        case 2:
+            inFormat = GL_RG32F;
+            pxFormat = GL_RG;
+            break;
+        case 3:
+            inFormat = GL_RGB32F;
+            pxFormat = GL_RGB;
+            break;
+        case 4:
+            inFormat = GL_RGBA32F;
+            pxFormat = GL_RGBA;
+    }
+    
     //bind to texture unit 0
     bindTexture(0);
     
@@ -48,11 +72,11 @@ bool texture::setFromPixels(glm::vec2* pixels) {
     glTexImage2D(
         GL_TEXTURE_2D,      //target
         0,                  //level of detail (mipmap reduction)
-        GL_RG32F,           //internal format
+        inFormat,           //internal format
         width,              //width
         height,             //height
         0,                  //border: must always be 0
-        GL_RG,              //format of pixel data
+        pxFormat,           //format of pixel data
         GL_FLOAT,           //type of the pixel data
         pixels              //pointer to pixels
     );        
@@ -60,7 +84,7 @@ bool texture::setFromPixels(glm::vec2* pixels) {
 }
 
 
-bool texture::create(int w, int h) {
+bool texture::create(int w, int h, int channels) {
     width = w;
     height = h;
     
@@ -68,7 +92,7 @@ bool texture::create(int w, int h) {
     glGenTextures(1, &textureID);
     
     //set as empty image
-    setFromPixels(0);
+    setFromPixels(0, channels);
 
     //minify & magnify filters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -103,10 +127,10 @@ void image::transform(float x, float y, float scale) {
 }
 
 
-bool image::create(int w, int h) {
+bool image::create(int w, int h, int channels) {
     width = w;
     height = h;
-    texture::create(w,h);
+    texture::create(w,h, channels);
     
     setTexelOffsets();
     
@@ -165,7 +189,7 @@ bool image::setAsTestPattern() {
             );
         }
     }
-    setFromPixels(pixels);
+    setFromPixels(pixels); //default format!
     delete[] pixels;
     return true;
 }
@@ -236,7 +260,7 @@ bool image::saveAsPNG(std::string filename) {
         GL_TEXTURE_2D,
         0, 
         GL_RGBA, 
-        GL_BYTE, 
+        GL_UNSIGNED_BYTE, 
         pixels
     );
     unsigned error = lodepng::encode(filename, pixels, width, height);

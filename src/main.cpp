@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
         render();
         //save frame, quit when finished or if there was an error
         if(record) {
-            //start at frame 50, render 100 frames, no frame skip
-            if(!saveFrame(recordPath, 50, 100, 0) )
+            //start at frame 250, render 500 frames, no frame skip
+            if(!saveFrame(recordPath, 500, 500, 0) )
                 break;
         }
         handleEvents();

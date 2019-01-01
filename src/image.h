@@ -2,6 +2,7 @@
 #include "GL.h"
 #include <string>
 
+
 class texture{
 protected:
     GLuint textureID = 0;
@@ -9,8 +10,8 @@ protected:
     int height = 0;
 public:
     bool bindTexture(GLuint textureUnit = 0);
-    bool setFromPixels(glm::vec2* pixels);
-    bool create(int w, int h);
+    bool setFromPixels(glm::vec2* pixels, int channels = 2);
+    bool create(int w, int h, int channels = 2);
 };
 
 
@@ -36,7 +37,7 @@ public:
     //set image transformation
     void transform(float x, float y, float scale = 1);
 
-    bool create(int w, int h);
+    bool create(int w, int h, int channels = 2);
     bool setAsTestPattern();
     bool render();
     bool setAsRenderTarget();
